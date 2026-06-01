@@ -1,0 +1,13 @@
+[Unit]
+Description=Jiral - File Uploader
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/root/projects/jiral
+ExecStart=/root/projects/jiral/jiral
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

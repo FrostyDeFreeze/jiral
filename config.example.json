@@ -1,0 +1,12 @@
+{
+	"addr": "127.0.0.1:7000",
+	"baseUrl": "https://files.example.com",
+	"apiToken": "super-secret-token",
+	"dataDir": "./data",
+	"fileCodeLength": 3,
+	"maxFileSize": 268435456,
+	"previewMaxPixels": 51984,
+	"previewMaxSide": 300,
+	"previewFPS": 15,
+	"previewFrames": 100
+}

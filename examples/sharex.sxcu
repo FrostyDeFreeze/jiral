@@ -1,0 +1,16 @@
+{
+  "Version": "17.0.0",
+  "Name": "Jiral",
+  "DestinationType": "ImageUploader, FileUploader",
+  "RequestMethod": "POST",
+  "RequestURL": "https://files.example.com/api/files",
+  "Headers": {
+    "Authorization": "Bearer super-secret-token"
+  },
+  "Body": "MultipartFormData",
+  "FileFormName": "file",
+  "URL": "{json:url}",
+  "ThumbnailURL": "{json:thumbnailUrl}",
+  "DeletionURL": "{json:deleteUrl}",
+  "ErrorMessage": "{json:error}"
+}
