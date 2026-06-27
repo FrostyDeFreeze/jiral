@@ -9,29 +9,31 @@ import (
 )
 
 const (
-	configFileName          = "config.json"
-	deleteCodeLength        = 7
-	defaultAddr             = "127.0.0.1:7000"
-	defaultDataDir          = "./data"
-	defaultFileCodeLength   = 3
-	defaultMaxFileSize      = 268435456
-	defaultPreviewMaxPixels = 51984
-	defaultPreviewMaxSide   = 300
-	defaultPreviewFPS       = 15
-	defaultPreviewFrames    = 100
+	configFileName                      = "config.json"
+	deleteCodeLength                    = 7
+	defaultAddr                         = "127.0.0.1:7000"
+	defaultDataDir                      = "./data"
+	defaultFileCodeLength               = 3
+	defaultMaxFileSize                  = 268435456
+	defaultRemoteDownloadTimeoutSeconds = 120
+	defaultPreviewMaxPixels             = 51984
+	defaultPreviewMaxSide               = 300
+	defaultPreviewFPS                   = 15
+	defaultPreviewFrames                = 100
 )
 
 type Config struct {
-	Addr             string `json:"addr"`
-	BaseURL          string `json:"baseUrl"`
-	APIToken         string `json:"apiToken"`
-	DataDir          string `json:"dataDir"`
-	FileCodeLength   int    `json:"fileCodeLength"`
-	MaxFileSize      int64  `json:"maxFileSize"`
-	PreviewMaxPixels int    `json:"previewMaxPixels"`
-	PreviewMaxSide   int    `json:"previewMaxSide"`
-	PreviewFPS       int    `json:"previewFPS"`
-	PreviewFrames    int    `json:"previewFrames"`
+	Addr                         string `json:"addr"`
+	BaseURL                      string `json:"baseUrl"`
+	APIToken                     string `json:"apiToken"`
+	DataDir                      string `json:"dataDir"`
+	FileCodeLength               int    `json:"fileCodeLength"`
+	MaxFileSize                  int64  `json:"maxFileSize"`
+	RemoteDownloadTimeoutSeconds int    `json:"remoteDownloadTimeoutSeconds"`
+	PreviewMaxPixels             int    `json:"previewMaxPixels"`
+	PreviewMaxSide               int    `json:"previewMaxSide"`
+	PreviewFPS                   int    `json:"previewFPS"`
+	PreviewFrames                int    `json:"previewFrames"`
 }
 
 func LoadConfig() (Config, error) {
@@ -78,6 +80,12 @@ func normalizeConfig(cfg Config) (Config, error) {
 	}
 	if cfg.MaxFileSize < 1 {
 		return Config{}, fmt.Errorf("maxFileSize must be positive")
+	}
+	if cfg.RemoteDownloadTimeoutSeconds == 0 {
+		cfg.RemoteDownloadTimeoutSeconds = defaultRemoteDownloadTimeoutSeconds
+	}
+	if cfg.RemoteDownloadTimeoutSeconds < 1 {
+		return Config{}, fmt.Errorf("remoteDownloadTimeoutSeconds must be positive")
 	}
 	if cfg.PreviewMaxPixels == 0 {
 		cfg.PreviewMaxPixels = defaultPreviewMaxPixels

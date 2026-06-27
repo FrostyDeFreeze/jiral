@@ -10,7 +10,12 @@ import (
 	"path/filepath"
 )
 
-var errTooLarge = errors.New("file too large")
+var (
+	errTooLarge   = errors.New("file too large")
+	errMIMEDetect = errors.New("mime detection failed")
+	errFileStat   = errors.New("file stat failed")
+	errFileSave   = errors.New("file save failed")
+)
 
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	mr, err := r.MultipartReader()
@@ -66,36 +71,62 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	entry, err := s.storeTempFile(tmpPath)
+	if err != nil {
+		s.writeStoreTempFileError(w, err)
+		return
+	}
+	cleanup = false
+
+	s.logInfo("uploaded", field("name", entry.Name), field("mime", mimeBase(entry.MIME)), field("size", entry.Size), field("url", entry.URL))
+	writeJSON(w, http.StatusCreated, entry)
+}
+
+func (s *Server) storeTempFile(tmpPath string) (FileEntry, error) {
 	mimeType, ext, err := detectMIME(tmpPath)
 	if err != nil {
-		s.logError("mime_detect_failed", field("err", err))
-		writeError(w, http.StatusInternalServerError, "mime detection failed")
-		return
+		return FileEntry{}, fmt.Errorf("%w: %v", errMIMEDetect, err)
 	}
 	if isSanitizable(mimeType) {
 		s.sanitizeFile(tmpPath, ext)
 	}
 	info, err := os.Stat(tmpPath)
 	if err != nil {
-		s.logError("file_stat_failed", field("err", err))
-		writeError(w, http.StatusInternalServerError, "file stat failed")
-		return
+		return FileEntry{}, fmt.Errorf("%w: %v", errFileStat, err)
+	}
+	if info.Size() > s.cfg.MaxFileSize {
+		return FileEntry{}, errTooLarge
 	}
 
 	now := s.timestamp()
 	entry, err := s.publishUploadedFile(tmpPath, ext, mimeType, info.Size(), now)
 	if err != nil {
-		s.logError("file_save_failed", field("err", err))
-		writeError(w, http.StatusInternalServerError, "file save failed")
-		return
+		return FileEntry{}, fmt.Errorf("%w: %v", errFileSave, err)
 	}
-	cleanup = false
 
 	if isPreviewable(mimeType) {
 		go s.generatePreview(entry.Name, mimeType)
 	}
-	s.logInfo("uploaded", field("name", entry.Name), field("mime", mimeBase(entry.MIME)), field("size", entry.Size), field("url", entry.URL))
-	writeJSON(w, http.StatusCreated, entry)
+	return entry, nil
+}
+
+func (s *Server) writeStoreTempFileError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, errTooLarge):
+		writeError(w, http.StatusRequestEntityTooLarge, "file too large")
+	case errors.Is(err, errMIMEDetect):
+		s.logError("mime_detect_failed", field("err", err))
+		writeError(w, http.StatusInternalServerError, "mime detection failed")
+	case errors.Is(err, errFileStat):
+		s.logError("file_stat_failed", field("err", err))
+		writeError(w, http.StatusInternalServerError, "file stat failed")
+	case errors.Is(err, errFileSave):
+		s.logError("file_save_failed", field("err", err))
+		writeError(w, http.StatusInternalServerError, "file save failed")
+	default:
+		s.logError("file_save_failed", field("err", err))
+		writeError(w, http.StatusInternalServerError, "file save failed")
+	}
 }
 
 func (s *Server) writeUploadTemp(part *multipart.Part) (string, error) {

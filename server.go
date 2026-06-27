@@ -14,11 +14,12 @@ import (
 )
 
 type Server struct {
-	cfg   Config
-	index Index
-	mu    sync.Mutex
-	logw  io.Writer
-	now   func() time.Time
+	cfg              Config
+	index            Index
+	mu               sync.Mutex
+	logw             io.Writer
+	now              func() time.Time
+	remoteDownloader remoteDownloadFunc
 }
 
 type logField struct {
@@ -57,10 +58,11 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	return &Server{
-		cfg:   cfg,
-		index: index,
-		logw:  os.Stdout,
-		now:   func() time.Time { return time.Now().UTC() },
+		cfg:              cfg,
+		index:            index,
+		logw:             os.Stdout,
+		now:              func() time.Time { return time.Now().UTC() },
+		remoteDownloader: downloadRemoteMedia,
 	}, nil
 }
 

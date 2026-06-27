@@ -1,12 +1,11 @@
 # Jiral
 
-Minimal Go file uploader. Jiral accepts authenticated uploads, stores files on
-disk, returns public links, serves files directly and generates local WebP
-thumbnails
+Minimal Go file host for authenticated uploads, remote media fetches, local disk
+storage, public links, direct serving and generated WebP thumbnails
 
 ## Scope
 
-- Private API for upload, rename and delete
+- Private API for upload, remote fetch, rename and delete
 - Public direct file, thumbnail and delete-link routes
 - Local JSON index and filesystem storage
 - Generated file names; original upload names are not stored or logged
@@ -16,6 +15,7 @@ thumbnails
 
 - Go 1.25 or newer
 - `ffmpeg` available on `PATH` for preview generation
+- `yt-dlp` available on `PATH` for remote TikTok/Instagram fetches
 
 ## Configuration
 
@@ -29,6 +29,7 @@ The server reads `config.json` from the current working directory
 	"dataDir": "./data",
 	"fileCodeLength": 3,
 	"maxFileSize": 268435456,
+	"remoteDownloadTimeoutSeconds": 120,
 	"previewMaxPixels": 51984,
 	"previewMaxSide": 300,
 	"previewFPS": 15,
@@ -39,6 +40,7 @@ The server reads `config.json` from the current working directory
 `apiToken` is required. `baseUrl` is normalized without a trailing slash and
 should be the public URL when the service runs behind Caddy. `addr` can stay on
 `127.0.0.1:7000` so the service only listens locally
+`remoteDownloadTimeoutSeconds` limits synchronous `yt-dlp` fetch requests
 
 ## Deploy
 
@@ -89,21 +91,47 @@ Authorization: Bearer <API_TOKEN>
 Upload one file from multipart field `file`:
 
 ```bash
-curl -H "Authorization: Bearer super-secret-token" -F "file=@example.png" http://127.0.0.1:7000/api/files
+curl \
+	-H "Authorization: Bearer super-secret-token" \
+	-F "file=@example.png" \
+	http://127.0.0.1:7000/api/files
 ```
 
 The upload response includes `url`, `thumbnailUrl` and `deleteUrl`
 
+Fetch one public TikTok or Instagram URL and store the downloaded result
+like a normal upload:
+
+```bash
+curl \
+	-X POST \
+	-H "Authorization: Bearer super-secret-token" \
+	-H "Content-Type: application/json" \
+	-d '{"url":"https://www.tiktok.com/@user/video/123"}' \
+	http://127.0.0.1:7000/api/files/fetch
+```
+
+The fetch response has the same shape as the upload response
+Only `https` TikTok and Instagram links are accepted
+
 Rename a file while preserving its extension:
 
 ```bash
-curl -X PATCH -H "Authorization: Bearer super-secret-token" -H "Content-Type: application/json" -d '{"name":"forsen"}' http://127.0.0.1:7000/api/files/jir.png
+curl \
+	-X PATCH \
+	-H "Authorization: Bearer super-secret-token" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"forsen"}' \
+	http://127.0.0.1:7000/api/files/jir.png
 ```
 
 Delete a file:
 
 ```bash
-curl -X DELETE -H "Authorization: Bearer super-secret-token" http://127.0.0.1:7000/api/files/forsen.png
+curl \
+	-X DELETE \
+	-H "Authorization: Bearer super-secret-token" \
+	http://127.0.0.1:7000/api/files/forsen.png
 ```
 
 ## Public Routes
@@ -133,6 +161,17 @@ Deletion link: {deleteUrl}
 `examples/sharex.sxcu` is a ShareX custom uploader. Replace the request URL and
 API token before importing it
 
+For URL fetches, call the JSON API directly:
+
+```bash
+curl \
+	-X POST \
+	-H "Authorization: Bearer super-secret-token" \
+	-H "Content-Type: application/json" \
+	-d '{"url":"https://www.instagram.com/reel/ABC/"}' \
+	https://files.example.com/api/files/fetch
+```
+
 ## Storage
 
 ```text
@@ -156,6 +195,7 @@ handlers_api.go     authenticated upload, rename and delete routes
 handlers_public.go  public direct file, thumbnail and delete-link routes
 storage.go          index metadata and delete-link backfill
 upload.go           multipart upload, tmp write, final publish
+remote.go           authenticated TikTok/Instagram fetch through yt-dlp
 media.go            ffmpeg sanitize and WebP thumbnail generation
 mime.go             content MIME detection
 stable_write.go     stable cross-platform index writes
