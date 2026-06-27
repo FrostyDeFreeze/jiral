@@ -95,9 +95,12 @@ func downloadRemoteMedia(ctx context.Context, rawURL, tmpDir string, maxSize int
 	}
 
 	args := []string{
+		"--force-ipv4",
 		"--no-playlist",
 		"--no-mtime",
 		"--max-filesize", strconv.FormatInt(maxSize, 10),
+		"--match-filters", "!is_live & !was_live",
+		"-S", "vcodec:h264",
 		"-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best",
 		"--merge-output-format", "mp4",
 		"-o", filepath.Join(tmpDir, "download.%(ext)s"),
