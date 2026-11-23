@@ -61,8 +61,13 @@ Changing `apiToken` breaks every delete link issued so far.
 | `DELETE /api/delete/{name}`          | Go, token | `204`                                  |
 | `GET /api/delete/{name}/{code}`      | Go        | deletes the file, this is `deleteUrl`  |
 | `GET /api/thumbnail/{name}`          | Go        | WebP for images and videos, else `404` |
-| `GET /{name}` from Chatterino/FFZ    | Go        | HTML card with `og:` tags              |
+| `GET /{name}` from Chatterino/FFZ    | Go        | image or `og:` card, see below         |
 | `GET /{name}`                        | Caddy     | the file                               |
+
+Chatterino shows images up to 4 MB itself. PNG, JPEG, GIF and WebP up to 4 MB
+go to Chatterino/FFZ as is, other images get the WebP thumbnail. This also covers
+another site whose `og:image` points here. Videos and other files get an HTML
+card with `og:` tags.
 
 Token routes need `Authorization: Bearer <apiToken>`. Errors come back as
 `{"error": "..."}`.

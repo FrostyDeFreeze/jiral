@@ -25,6 +25,11 @@ const (
 	toolTimeout        = 30 * time.Second
 )
 
+// Chatterino shows an image itself up to 4 MB, and only in formats Qt reads
+const chatterinoMaxImage = 4_000_000
+
+var chatterinoImages = map[string]bool{"image/png": true, "image/jpeg": true, "image/gif": true, "image/webp": true}
+
 type meta struct {
 	mime          string
 	size          int64
@@ -50,7 +55,8 @@ func isMedia(ct string) bool {
 	return strings.HasPrefix(ct, "image/") || strings.HasPrefix(ct, "video/")
 }
 
-// handleCard answers Chatterino/FFZ with an og: card; Caddy proxies only their user agents here
+// handleCard answers Chatterino/FFZ, the only user agents Caddy proxies here: an image
+// itself (also when another site's og:image points at it), otherwise an og: card
 func (s *server) handleCard(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if !s.exists(name) {
@@ -66,6 +72,16 @@ func (s *server) handleCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ct, _, _ := strings.Cut(contentType(src), ";")
+	if strings.HasPrefix(ct, "image/") {
+		if fi.Size() <= chatterinoMaxImage && chatterinoImages[ct] {
+			http.ServeFile(w, r, src)
+		} else {
+			s.serveThumbnail(w, r, name, src, ct)
+		}
+
+		return
+	}
+
 	m := meta{mime: ct, size: fi.Size()}
 	if isMedia(ct) || strings.HasPrefix(ct, "audio/") {
 		if err := s.probe(r.Context(), src, &m); err != nil {
@@ -99,6 +115,10 @@ func (s *server) handleThumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.serveThumbnail(w, r, name, src, ct)
+}
+
+func (s *server) serveThumbnail(w http.ResponseWriter, r *http.Request, name, src, ct string) {
 	tmp, err := os.CreateTemp(s.tmp, "thumbnail-*.webp")
 	if err != nil {
 		fail(w, http.StatusInternalServerError, "thumbnail failed", err)
