@@ -3,11 +3,6 @@
 	"baseUrl": "https://files.example.com",
 	"apiToken": "super-secret-token",
 	"dataDir": "./data",
-	"fileCodeLength": 3,
-	"maxFileSize": 268435456,
-	"remoteDownloadTimeoutSeconds": 120,
-	"previewMaxPixels": 51984,
-	"previewMaxSide": 300,
-	"previewFPS": 15,
-	"previewFrames": 100
+	"nameLength": 3,
+	"maxFileSizeMB": 256
 }

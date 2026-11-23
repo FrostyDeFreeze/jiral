@@ -3,7 +3,7 @@
   "Name": "Jiral",
   "DestinationType": "ImageUploader, FileUploader",
   "RequestMethod": "POST",
-  "RequestURL": "https://files.example.com/api/files",
+  "RequestURL": "https://files.example.com/api/upload",
   "Headers": {
     "Authorization": "Bearer super-secret-token"
   },

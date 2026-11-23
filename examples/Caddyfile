@@ -1,0 +1,21 @@
+# jiral behind Caddy. data/files must be readable by the Caddy user: fine under
+# /root when Caddy runs as root, otherwise move dataDir out of /root.
+files.example.com {
+	# Go: upload, fetch, delete, thumbnails
+	handle /api/* {
+		reverse_proxy 127.0.0.1:7000
+	}
+
+	# Go: link card for Chatterino and FFZ instead of the file
+	@og header_regexp User-Agent ^chatterino-api-cache/|FFZBot/
+	handle @og {
+		header Cache-Control no-cache
+		reverse_proxy 127.0.0.1:7000
+	}
+
+	# the files themselves, as is
+	handle {
+		root * /root/projects/jiral/data/files
+		file_server
+	}
+}
