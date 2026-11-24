@@ -64,10 +64,11 @@ Changing `apiToken` breaks every delete link issued so far.
 | `GET /{name}` from Chatterino/FFZ    | Go        | image or `og:` card, see below         |
 | `GET /{name}`                        | Caddy     | the file                               |
 
-Chatterino shows images up to 4 MB itself. PNG, JPEG, GIF and WebP up to 4 MB
-go to Chatterino/FFZ as is, other images get the WebP thumbnail. This also covers
-another site whose `og:image` points here. Videos and other files get an HTML
-card with `og:` tags.
+Chatterino/FFZ get an HTML card with `og:` tags (name, size, thumbnail) for
+every file. Add `?raw` to an image link to give them the image instead, for
+example in another site's `og:image`: PNG, JPEG, GIF and WebP up to 4 MB as is
+(Chatterino's own limit), other images as the WebP thumbnail. Everyone else gets
+the file from Caddy, with or without `?raw`.
 
 Token routes need `Authorization: Bearer <apiToken>`. Errors come back as
 `{"error": "..."}`.

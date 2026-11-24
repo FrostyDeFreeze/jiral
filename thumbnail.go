@@ -55,8 +55,9 @@ func isMedia(ct string) bool {
 	return strings.HasPrefix(ct, "image/") || strings.HasPrefix(ct, "video/")
 }
 
-// handleCard answers Chatterino/FFZ, the only user agents Caddy proxies here: an image
-// itself (also when another site's og:image points at it), otherwise an og: card
+// handleCard answers Chatterino/FFZ, the only user agents Caddy proxies here: an og: card,
+// or with ?raw an image itself for another site's og:image. Chatterino API fetches link
+// info and thumbnails with identical requests, so only the URL can tell them apart
 func (s *server) handleCard(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if !s.exists(name) {
@@ -72,7 +73,7 @@ func (s *server) handleCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ct, _, _ := strings.Cut(contentType(src), ";")
-	if strings.HasPrefix(ct, "image/") {
+	if strings.HasPrefix(ct, "image/") && r.URL.Query().Has("raw") {
 		if fi.Size() <= chatterinoMaxImage && chatterinoImages[ct] {
 			http.ServeFile(w, r, src)
 		} else {
