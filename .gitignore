@@ -1,5 +1,6 @@
 .gocache/
 *.exe
+/jiral
 *.test
 coverage.out
 
