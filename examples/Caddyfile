@@ -1,6 +1,12 @@
 # jiral behind Caddy. data/files must be readable by the Caddy user: fine under
 # /root when Caddy runs as root, otherwise move dataDir out of /root.
 files.example.com {
+	# favicon.ico from the repo, for the browser tab of every file
+	handle /favicon.ico {
+		root * /root/projects/jiral
+		file_server
+	}
+
 	# Go: upload, fetch, delete, thumbnails
 	handle /api/* {
 		reverse_proxy 127.0.0.1:7000
